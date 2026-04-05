@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { AlertTriangle, BarChart3, FileOutput, Home, Settings, Tag, Trash2, User } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Modal from 'react-native-modal';
 import { APP_INFO } from '../../core/constants/appInfo';
 import { obtenerUsuarioPrincipal } from '../../features/usuario/services/usuarioService';
@@ -22,6 +23,7 @@ interface CustomDrawerProps extends DrawerContentComponentProps {
 export default function CustomDrawer(props: CustomDrawerProps) {
   const router = useRouter();
   const { isDarkMode } = useTheme();
+  const insets = useSafeAreaInsets();
   const [usuario, setUsuario] = useState<any>(null);
   const [showResetModal, setShowResetModal] = useState(false);
 
@@ -76,11 +78,11 @@ export default function CustomDrawer(props: CustomDrawerProps) {
 
   return (
     <View className={`flex-1 ${isDarkMode ? 'bg-dark-bg' : 'bg-white'}`}>
-      <DrawerContentScrollView {...props} contentContainerStyle={{ paddingTop: 0 }}>
+      <DrawerContentScrollView {...props} contentContainerStyle={{ paddingTop: insets.top + 8 }}>
         {/* Cabecera: Tarjeta Flotante con Foto en Sidebar */}
         <TouchableOpacity
           onPress={() => router.push('/perfil')}
-          className={`h-[230px] relative overflow-hidden ${isDarkMode ? 'bg-dark-card' : 'bg-slate-900'} rounded-[32px] mt-4 mx-3`}
+          className={`h-[200px] relative overflow-hidden ${isDarkMode ? 'bg-dark-card' : 'bg-slate-900'} rounded-[32px] mx-3`}
           activeOpacity={0.9}
         >
           {usuario?.foto_perfil ? (

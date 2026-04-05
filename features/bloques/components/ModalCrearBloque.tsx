@@ -1,26 +1,44 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, ScrollView } from 'react-native';
-import { X, Check } from 'lucide-react-native';
+import { X, Check, Image as ImageIcon, Camera } from 'lucide-react-native';
 import Button from '../../../shared/components/Button';
 import ColorPicker from 'react-native-wheel-color-picker';
 import Modal from 'react-native-modal';
+import ModalExito from '../../../shared/components/ModalExito';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'expo-image';
 import { useTheme } from '../../../core/contexts/ThemeContext';
 
 interface ModalCrearBloqueProps {
   visible: boolean;
   onClose: () => void;
-  onSave: (nombre: string, color: string) => Promise<void>;
+  onSave: (nombre: string, color: string, imagen?: string) => Promise<void>;
+  bloqueAEditar?: { id: number; nombre: string; color: string; imagen?: string } | null;
 }
 
 /**
  * ModalCrearBloque: Ahora con Scroll Fluido, Wheel Picker y Alerta de Éxito.
  */
-export default function ModalCrearBloque({ visible, onClose, onSave }: ModalCrearBloqueProps) {
+export default function ModalCrearBloque({ visible, onClose, onSave, bloqueAEditar }: ModalCrearBloqueProps) {
   const { isDarkMode } = useTheme();
   const [nombre, setNombre] = useState('');
   const [colorSel, setColorSel] = useState('#22C55E');
+  const [imagen, setImagen] = useState<string | undefined>(undefined);
   const [enviando, setEnviando] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Inicializar si estamos editando
+  React.useEffect(() => {
+    if (visible && bloqueAEditar) {
+        setNombre(bloqueAEditar.nombre);
+        setColorSel(bloqueAEditar.color);
+        setImagen(bloqueAEditar.imagen);
+    } else if (visible && !bloqueAEditar) {
+        setNombre('');
+        setColorSel('#22C55E');
+        setImagen(undefined);
+    }
+  }, [visible, bloqueAEditar]);
 
   // Colores Dinámicos
   const textMain = isDarkMode ? 'text-white' : 'text-slate-900';
@@ -28,12 +46,25 @@ export default function ModalCrearBloque({ visible, onClose, onSave }: ModalCrea
   const cardBg = isDarkMode ? 'bg-dark-card' : 'bg-slate-100';
   const borderCol = isDarkMode ? 'border-brand/20' : 'border-slate-100';
 
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.6,
+    });
+
+    if (!result.canceled) {
+      setImagen(result.assets[0].uri);
+    }
+  };
+
   const handleGuardar = async () => {
     if (nombre.trim().length < 3) return;
     setEnviando(true);
     
     try {
-      await onSave(nombre, colorSel);
+      await onSave(nombre, colorSel, imagen);
       
       // Mostrar animación de éxito
       setShowSuccess(true);
@@ -41,6 +72,8 @@ export default function ModalCrearBloque({ visible, onClose, onSave }: ModalCrea
       setTimeout(() => {
         setShowSuccess(false);
         setNombre('');
+        setColorSel('#22C55E');
+        setImagen(undefined);
         setEnviando(false);
         onClose();
       }, 1200);
@@ -94,7 +127,7 @@ export default function ModalCrearBloque({ visible, onClose, onSave }: ModalCrea
                         </View>
 
                         {/* WHEEL Color Picker Premium */}
-                        <View className="mb-12 h-[350px]">
+                        <View className="mb-10 h-[350px]">
                             <View className="flex-row items-center justify-between mb-8 ml-1">
                                 <Text className={`${textSub} font-bold uppercase tracking-widest text-[10px]`}>Elegir Color Identificador</Text>
                                 <View className="w-12 h-6 rounded-full border border-white/10" style={{ backgroundColor: colorSel }} />
@@ -112,6 +145,32 @@ export default function ModalCrearBloque({ visible, onClose, onSave }: ModalCrea
                                 discrete={false}
                             />
                         </View>
+
+                        {/* Selector de Imagen */}
+                        <View className="mb-10">
+                            <Text className={`${textSub} font-bold uppercase tracking-widest text-[10px] mb-4 ml-1`}>Imagen Personalizada (Opcional)</Text>
+                            <TouchableOpacity 
+                                onPress={pickImage}
+                                className={`${cardBg} h-40 rounded-[40px] border border-dashed ${borderCol} items-center justify-center overflow-hidden`}
+                            >
+                                {imagen ? (
+                                    <View className="w-full h-full">
+                                        <Image source={{ uri: imagen }} contentFit="cover" style={{ width: '100%', height: '100%' }} />
+                                        <View className="absolute inset-0 bg-black/20 items-center justify-center">
+                                            <Camera size={24} color="#FFF" />
+                                            <Text className="text-white text-[10px] font-bold uppercase mt-2">Cambiar Foto</Text>
+                                        </View>
+                                    </View>
+                                ) : (
+                                    <View className="items-center">
+                                        <View className="w-14 h-14 rounded-full bg-brand/10 items-center justify-center mb-4">
+                                            <ImageIcon size={24} color="#22C55E" />
+                                        </View>
+                                        <Text className={`${textSub} text-[11px] font-bold uppercase tracking-widest`}>Subir una imagen</Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </TouchableWithoutFeedback>
             </ScrollView>
@@ -119,7 +178,7 @@ export default function ModalCrearBloque({ visible, onClose, onSave }: ModalCrea
             {/* Acción Principal */}
             <View className="pt-6">
                 <Button 
-                    titulo={enviando ? "Asegurando bolsillo..." : "Crear Bolsillo"} 
+                    titulo={enviando ? "Guardando cambios..." : (bloqueAEditar ? "Guardar Cambios" : "Crear Bolsillo")} 
                     onPress={handleGuardar}
                     disabled={nombre.trim().length < 3 || enviando}
                     className="h-16 rounded-[25px]"
@@ -128,20 +187,11 @@ export default function ModalCrearBloque({ visible, onClose, onSave }: ModalCrea
           </KeyboardAvoidingView>
         </View>
 
-      {/* Alerta de Éxito Overlay */}
-      <Modal 
-        isVisible={showSuccess}
-        animationIn="zoomIn"
-        animationOut="fadeOut"
-        backdropOpacity={0.8}
-        className="m-0 items-center justify-center shadow-2xl shadow-brand/40"
-      >
-        <View className="bg-brand w-36 h-36 rounded-[45px] items-center justify-center shadow-2xl">
-            <Check size={70} color="#000" strokeWidth={5} />
-        </View>
-        <Text className="text-white text-3xl font-black mt-8 tracking-tighter">¡Bolsillo Creado!</Text>
-        <Text className="text-brand text-xs font-bold uppercase tracking-[4px] mt-2 opacity-80">Daniq Premium</Text>
-      </Modal>
+      {/* Alerta de Éxito Overlay Reemplazada */}
+      <ModalExito 
+        visible={showSuccess}
+        titulo={bloqueAEditar ? '¡Bolsillo Actualizado!' : '¡Bolsillo Creado!'}
+      />
     </Modal>
   );
 }

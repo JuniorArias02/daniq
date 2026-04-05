@@ -9,9 +9,11 @@ import Button from '../../../shared/components/Button';
 import { obtenerUsuarioPrincipal } from '../../usuario/services/usuarioService';
 import ModalCrearBloque from '../components/ModalCrearBloque';
 import ModalCrearGasto from '../../gastos/components/ModalCrearGasto';
-import { listarBloquesUsuario, borrarBloque, crearNuevoBloque } from '../services/bloqueService';
+import { listarBloquesUsuario, borrarBloque, crearNuevoBloque, actualizarBloque } from '../services/bloqueService';
 import { formatearCOP } from '../../../core/utils/formatearDinero';
 import ModalConfirmacion from '../../../shared/components/ModalConfirmacion';
+import ModalOpcionesBloque from '../components/ModalOpcionesBloque';
+import { Image } from 'expo-image';
 import { useTheme } from '../../../core/contexts/ThemeContext';
 
 /**
@@ -33,6 +35,8 @@ export default function BloquesPage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [gastoModalVisible, setGastoModalVisible] = useState(false);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+  const [opcionesModalVisible, setOpcionesModalVisible] = useState(false);
+  const [bloqueSeleccionado, setBloqueSeleccionado] = useState<any | null>(null);
   const [bloqueAEliminar, setBloqueAEliminar] = useState<{id: number, nombre: string} | null>(null);
 
   const handleOpenDrawer = () => {
@@ -54,12 +58,26 @@ export default function BloquesPage() {
     }, [cargarDatos])
   );
 
-  const handleCrear = async (nombre: string, color: string) => {
+  const handleCrear = async (nombre: string, color: string, imagen?: string) => {
     const user = await obtenerUsuarioPrincipal();
     if (user) {
-      await crearNuevoBloque(user.id, nombre, color);
+      if (bloqueSeleccionado) {
+          await actualizarBloque(bloqueSeleccionado.id, nombre, color, imagen);
+      } else {
+          await crearNuevoBloque(user.id, nombre, color, imagen);
+      }
+      setBloqueSeleccionado(null);
       cargarDatos();
     }
+  };
+
+  const handleAbrirOpciones = (bloque: any) => {
+    setBloqueSeleccionado(bloque);
+    setOpcionesModalVisible(true);
+  };
+
+  const handleEditar = () => {
+    setModalVisible(true);
   };
 
   const handleEliminar = (id: number, nombre: string) => {
@@ -120,25 +138,61 @@ export default function BloquesPage() {
                 key={bloque.id} 
                 className="w-[48%] mb-4"
                 onPress={() => router.push({ pathname: '/bloque/[id]', params: { id: bloque.id.toString() } })}
-                onLongPress={() => handleEliminar(bloque.id, bloque.nombre)}
+                onLongPress={() => handleAbrirOpciones(bloque)}
               >
-                <Card variant="flat" className={`p-5 border ${borderCol} relative overflow-hidden`}>
-                   {/* Background logic color */}
-                   <View 
-                     className="absolute top-0 right-0 w-16 h-16 opacity-10 rounded-bl-full" 
-                     style={{ backgroundColor: bloque.color || '#22C55E' }}
-                   />
-                   
-                   <View className="w-10 h-10 rounded-xl items-center justify-center mb-4" style={{ backgroundColor: `${bloque.color || '#22C55E'}20` }}>
-                      <TrendingDown size={20} color={bloque.color || '#22C55E'} />
-                   </View>
+                <Card variant="flat" className={`p-5 border ${borderCol} relative overflow-hidden min-h-[220px] justify-between`}>
+                   <View>
+                      {/* Background logic color decorativo */}
+                      <View 
+                        className="absolute -top-20 -right-20 w-44 h-44 opacity-[0.18] rounded-full" 
+                        style={{ backgroundColor: bloque.color || '#22C55E' }}
+                      />
+                      
+                      <View className="w-14 h-14 rounded-[22px] items-center justify-center mb-5 overflow-hidden shadow-sm" style={{ backgroundColor: `${bloque.color || '#22C55E'}20` }}>
+                          {bloque.imagen ? (
+                            <Image source={{ uri: bloque.imagen }} contentFit="cover" style={{ width: '100%', height: '100%' }} />
+                          ) : (
+                            <TrendingDown size={24} color={bloque.color || '#22C55E'} />
+                          )}
+                      </View>
 
-                   <Text className={`${textMain} font-bold text-[16px] mb-1`} numberOfLines={1}>{bloque.nombre}</Text>
-                   <Text className={`${textSubBold} text-[10px] uppercase font-bold tracking-widest mb-4`}>{bloque.tipo || 'Gasto'}</Text>
+                      <Text 
+                        className={`${textMain} font-black text-[17px] leading-tight mb-1`} 
+                        numberOfLines={2}
+                      >
+                        {bloque.nombre}
+                      </Text>
+                      <Text className="text-brand font-bold text-[9px] uppercase tracking-[2px] opacity-60">
+                        {bloque.tipo || 'Bolsillo'}
+                      </Text>
+                   </View>
                    
-                   <View className={`mt-4 pt-4 border-t ${isDarkMode ? 'border-dark-border/20' : 'border-slate-100'}`}>
-                       <Text className={`${textSubBold} text-[9px] uppercase font-bold tracking-widest`}>Ejecutado</Text>
-                       <Text className={`${textMain} font-bold text-lg`}>{formatearCOP(bloque.gastado || 0)}</Text>
+                   <View className={`mt-4 pt-4 border-t ${isDarkMode ? 'border-white/5' : 'border-slate-100'}`}>
+                       <View className="flex-row justify-between items-end mb-1">
+                          <Text className={`${textSubBold} text-[9px] uppercase font-bold tracking-[2px]`}>Ejecutado</Text>
+                          {bloque.presupuestado > 0 && (
+                            <Text className="text-brand font-black text-[9px] uppercase">
+                                {Math.round(((bloque.gastado || 0) / bloque.presupuestado) * 100)}%
+                            </Text>
+                          )}
+                       </View>
+                       
+                       <View className="flex-row items-baseline">
+                          <Text className={`${textMain} font-black text-xl tracking-tighter`}>{formatearCOP(bloque.gastado || 0)}</Text>
+                       </View>
+
+                       {/* Barra de Progreso Condicional */}
+                       {bloque.presupuestado > 0 && (
+                           <View className="h-1.5 w-full bg-slate-500/20 rounded-full mt-3 overflow-hidden">
+                               <View 
+                                  className="h-full bg-brand" 
+                                  style={{ 
+                                      width: `${Math.min(100, ((bloque.gastado || 0) / bloque.presupuestado) * 100)}%`,
+                                      backgroundColor: bloque.color || '#22C55E'
+                                  }}
+                               />
+                           </View>
+                       )}
                    </View>
                 </Card>
               </TouchableOpacity>
@@ -159,8 +213,21 @@ export default function BloquesPage() {
       {/* Formulario Modal de Bloques */}
       <ModalCrearBloque 
         visible={modalVisible} 
-        onClose={() => setModalVisible(false)} 
-        onSave={handleCrear} 
+        onClose={() => {
+            setModalVisible(false);
+            setBloqueSeleccionado(null);
+        }} 
+        onSave={handleCrear}
+        bloqueAEditar={bloqueSeleccionado}
+      />
+
+      {/* Modal de Opciones (Editar/Eliminar) */}
+      <ModalOpcionesBloque
+        visible={opcionesModalVisible}
+        onClose={() => setOpcionesModalVisible(false)}
+        onEdit={handleEditar}
+        onDelete={() => handleEliminar(bloqueSeleccionado?.id, bloqueSeleccionado?.nombre)}
+        nombreBloque={bloqueSeleccionado?.nombre || ''}
       />
 
       {/* Formulario Modal de Gastos (Actualiza la vista) */}

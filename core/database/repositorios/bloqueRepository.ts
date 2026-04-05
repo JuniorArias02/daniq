@@ -11,7 +11,8 @@ export const bloqueRepository = {
   obtenerTodos: async (usuario_id: number) => {
     const sql = `
       SELECT b.*, 
-      (SELECT SUM(monto) FROM gastos WHERE bloque_id = b.id) as gastado 
+      (SELECT SUM(monto) FROM gastos WHERE bloque_id = b.id) as gastado,
+      (SELECT SUM(precio) FROM items_bloque WHERE bloque_id = b.id) as presupuestado
       FROM bloques b 
       WHERE usuario_id = ?
       ORDER BY created_at DESC
@@ -47,5 +48,13 @@ export const bloqueRepository = {
   eliminar: async (id: number) => {
     const sql = 'DELETE FROM bloques WHERE id = ?';
     return await execute(sql, [id]);
+  },
+
+  /**
+   * Actualiza los datos de un bloque existente.
+   */
+  actualizar: async (id: number, nombre: string, color: string, imagen?: string) => {
+    const sql = 'UPDATE bloques SET nombre = ?, color = ?, imagen = ? WHERE id = ?';
+    return await execute(sql, [nombre, color, imagen, id]);
   }
 };

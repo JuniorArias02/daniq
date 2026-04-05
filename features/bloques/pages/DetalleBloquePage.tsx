@@ -7,9 +7,12 @@ import Card from '../../../shared/components/Card';
 import Button from '../../../shared/components/Button';
 import { obtenerDetalleBloque } from '../services/bloqueService';
 import { obtenerPorBloque } from '../../gastos/services/gastoService';
+import { itemBloqueService } from '../services/itemBloqueService';
 import ModalCrearGasto from '../../gastos/components/ModalCrearGasto';
+import ModalCrearItemBloque from '../components/ModalCrearItemBloque';
 import { formatearCOP } from '../../../core/utils/formatearDinero';
 import { useTheme } from '../../../core/contexts/ThemeContext';
+import { Trash2 } from 'lucide-react-native';
 
 const ICON_MAP: Record<string, any> = { ShoppingCart, Utensils, Zap, Bus, Coffee, Heart, Briefcase, Car, Home };
 
@@ -18,6 +21,7 @@ export default function DetalleBloquePage({ id }: { id: string }) {
   const { isDarkMode } = useTheme();
   const [bloque, setBloque] = useState<any>(null);
   const [gastos, setGastos] = useState<any[]>([]);
+  const [items, setItems] = useState<any[]>([]);
   
   const textMain = isDarkMode ? 'text-white' : 'text-slate-900';
   const textSub = isDarkMode ? 'text-slate-400' : 'text-slate-600';
@@ -26,22 +30,35 @@ export default function DetalleBloquePage({ id }: { id: string }) {
   const borderCol = isDarkMode ? 'border-dark-border/40' : 'border-slate-200';
   const [cargando, setCargando] = useState(true);
   const [modalGastoVisible, setModalGastoVisible] = useState(false);
+  const [modalItemVisible, setModalItemVisible] = useState(false);
 
   const cargarDatos = useCallback(async () => {
     try {
       const bId = parseInt(id);
-      const [resBloque, resGastos] = await Promise.all([
+      const [resBloque, resGastos, resItems] = await Promise.all([
         obtenerDetalleBloque(bId),
-        obtenerPorBloque(bId)
+        obtenerPorBloque(bId),
+        itemBloqueService.listarPorBloque(bId)
       ]);
       setBloque(resBloque);
       setGastos(resGastos);
+      setItems(resItems);
     } catch (e) {
       console.error(e);
     } finally {
       setCargando(false);
     }
   }, [id]);
+
+  const handleAgregarItem = async (nombre: string, precio: number) => {
+    await itemBloqueService.agregarItem(parseInt(id), nombre, precio);
+    cargarDatos();
+  };
+
+  const handleEliminarItem = async (itemId: number) => {
+    await itemBloqueService.eliminarItem(itemId);
+    cargarDatos();
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -91,18 +108,66 @@ export default function DetalleBloquePage({ id }: { id: string }) {
             
             <View className="flex-row justify-between items-center">
                 <View>
-                    <Text className={`${textSubBold} text-[10px] uppercase font-bold tracking-widest mb-2`}>Total Ejecutado</Text>
+                    <Text className={`${textSubBold} text-[9px] uppercase font-bold tracking-widest mb-1`}>Total Ejecutado</Text>
                     <Text className={`${textMain} text-4xl font-black tracking-tighter`}>{formatearCOP(bloque?.gastado || 0)}</Text>
                 </View>
-                <TouchableOpacity 
-                    onPress={() => setModalGastoVisible(true)}
-                    className={`flex-row items-center ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'} border px-4 py-2 rounded-2xl`}
-                >
-                    <Plus size={18} color={isDarkMode ? "#FFF" : "#475569"} />
-                    <Text className={`${textMain} font-bold ml-2 text-xs uppercase tracking-widest`}>Registrar</Text>
-                </TouchableOpacity>
+                <View className="items-end">
+                    <Text className="text-brand font-bold text-[9px] uppercase tracking-widest mb-1">Presupuestado</Text>
+                    <Text className={`${textSub} font-black text-lg tracking-tighter`}>
+                        {formatearCOP(items.reduce((acc, curr) => acc + curr.precio, 0))}
+                    </Text>
+                </View>
+            </View>
+
+            {/* Barra de Progreso Visual */}
+            <View className="mt-6">
+                <View className="h-1.5 w-full bg-slate-500/20 rounded-full overflow-hidden">
+                    <View 
+                       className="h-full bg-brand" 
+                       style={{ 
+                          width: `${Math.min(100, ((bloque?.gastado || 0) / (items.reduce((acc, curr) => acc + curr.precio, 0) || 1)) * 100)}%`,
+                          backgroundColor: bloque?.color || '#22C55E'
+                       }} 
+                    />
+                </View>
             </View>
         </Card>
+
+        {/* Sección de Ítems Planificados (Presupuesto) */}
+        <View className="mt-10">
+            <View className="flex-row items-center justify-between mb-6">
+                <Text className={`${textMain} font-bold text-lg`}>Plan de este bolsillo</Text>
+                <TouchableOpacity 
+                   onPress={() => setModalItemVisible(true)}
+                   className="flex-row items-center bg-brand/10 px-3 py-1.5 rounded-xl border border-brand/20"
+                >
+                    <Plus size={14} color="#22C55E" strokeWidth={3} />
+                    <Text className="text-brand font-bold text-[10px] uppercase ml-1.5 tracking-widest">Añadir Meta</Text>
+                </TouchableOpacity>
+            </View>
+            
+            <View className={`${cardBg} rounded-[32px] p-2 border ${borderCol}`}>
+                {items.length === 0 ? (
+                    <View className="py-10 items-center">
+                        <ShoppingCart size={24} color={isDarkMode ? "#484F58" : "#94A3B8"} strokeWidth={1.5} />
+                        <Text className={`${textSub} text-[11px] mt-2 italic`}>Sin metas planificadas aún.</Text>
+                    </View>
+                ) : items.map((item) => (
+                    <View key={item.id} className="flex-row items-center justify-between p-4 px-6 border-b border-white/5 last:border-b-0">
+                        <View className="flex-row items-center flex-1">
+                            <View className="w-2 h-2 rounded-full mr-4" style={{ backgroundColor: bloque?.color }} />
+                            <Text className={`${textMain} font-bold text-[13px]`} numberOfLines={1}>{item.nombre}</Text>
+                        </View>
+                        <View className="flex-row items-center">
+                            <Text className={`${textSub} font-bold text-[13px] mr-4`}>{formatearCOP(item.precio)}</Text>
+                            <TouchableOpacity onPress={() => handleEliminarItem(item.id)} hitSlop={15}>
+                                <Trash2 size={16} color="#EF4444" opacity={0.6} />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                ))}
+            </View>
+        </View>
 
         {/* Lista de Movimientos */}
         <View className="mt-10">
@@ -151,6 +216,13 @@ export default function DetalleBloquePage({ id }: { id: string }) {
         onClose={() => setModalGastoVisible(false)} 
         onSave={() => cargarDatos()} 
         initialBloqueId={parseInt(id)}
+      />
+
+      {/* Modal para crear ítem de presupuesto */}
+      <ModalCrearItemBloque
+        visible={modalItemVisible}
+        onClose={() => setModalItemVisible(false)}
+        onSave={handleAgregarItem}
       />
     </BaseLayout>
   );

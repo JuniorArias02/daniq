@@ -8,11 +8,16 @@ export async function listarBloquesUsuario(usuario_id: number) {
   return await bloqueRepository.obtenerTodos(usuario_id);
 }
 
-export async function crearNuevoBloque(usuario_id: number, nombre: string, color: string = '#22C55E') {
+export async function crearNuevoBloque(usuario_id: number, nombre: string, color: string = '#22C55E', imagen?: string) {
   if (!nombre || nombre.length < 3) throw new Error("Dale un nombre más largo al bloque");
   
   // Por defecto el tipo es 'gasto' ya que así lo quiere el usuario (salidas)
-  return await bloqueRepository.crear(usuario_id, nombre, 'gasto', color);
+  return await bloqueRepository.crear(usuario_id, nombre, 'gasto', color, imagen);
+}
+
+export async function actualizarBloque(id: number, nombre: string, color: string, imagen?: string) {
+    if (!nombre || nombre.length < 3) throw new Error("Dale un nombre más largo al bloque");
+    return await bloqueRepository.actualizar(id, nombre, color, imagen);
 }
 
 export async function borrarBloque(id: number) {

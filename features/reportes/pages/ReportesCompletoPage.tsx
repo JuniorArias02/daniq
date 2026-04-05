@@ -9,7 +9,7 @@ import { BarChart } from 'react-native-chart-kit';
 import BaseLayout from '../../../core/layouts/BaseLayout';
 import { obtenerUsuarioPrincipal } from '../../usuario/services/usuarioService';
 import { obtenerAnaliticaMensual, obtenerTendenciaAhorro } from '../services/reporteService';
-import { formatearCOP } from '../../../core/utils/formatearDinero';
+import { formatearCOP, formatearCOPResumen } from '../../../core/utils/formatearDinero';
 import { useTheme } from '../../../core/contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
@@ -171,23 +171,24 @@ export default function ReportesCompletoPage() {
            </View>
            
            {chartData ? (
-               <BarChart
-                 data={chartData}
-                 width={width - 50}
-                 height={220}
-                 yAxisLabel="$"
-                 yAxisSuffix=""
-                 chartConfig={chartConfig}
-                 style={{
-                   borderRadius: 20,
-                   marginTop: 10,
-                   paddingRight: 30,
-                   marginLeft: -10
-                 }}
-                 withHorizontalLabels={true}
-                 fromZero={true}
-                 showValuesOnTopOfBars={true}
-               />
+               <View style={{ alignSelf: 'center', width: width - 80 }}>
+                   <BarChart
+                     {...({
+                        data: chartData,
+                        width: width - 80,
+                        height: 220,
+                        yAxisLabel: "",
+                        yAxisSuffix: "",
+                        formatYLabel: (val: string) => `$${formatearCOPResumen(parseFloat(val))}`,
+                        formatTopBarValue: (val: number) => `$${formatearCOPResumen(val)}`,
+                        chartConfig: { ...chartConfig, propsForBackgroundLines: { strokeDasharray: '' } },
+                        style: { borderRadius: 20, marginTop: 10 },
+                        withHorizontalLabels: true,
+                        fromZero: true,
+                        showValuesOnTopOfBars: true
+                     } as any)}
+                   />
+               </View>
            ) : (
                <View className="h-40 items-center justify-center">
                    <Text className="text-slate-500 italic text-xs">No hay datos suficientes para graficar</Text>

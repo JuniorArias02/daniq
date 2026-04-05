@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, ScrollView, Alert } from 'react-native';
 import { X, Check, TrendingUp, AlignLeft, DollarSign } from 'lucide-react-native';
 import Button from '../../../shared/components/Button';
 import { registrarIngreso } from '../services/ingresoService';
 import { obtenerUsuarioPrincipal } from '../../usuario/services/usuarioService';
 import { formatearCOP } from '../../../core/utils/formatearDinero';
 import Modal from 'react-native-modal';
+import ModalExito from '../../../shared/components/ModalExito';
 import { useTheme } from '../../../core/contexts/ThemeContext';
 
 interface ModalCrearIngresoProps {
@@ -19,7 +20,7 @@ interface ModalCrearIngresoProps {
  */
 export default function ModalCrearIngreso({ visible, onClose, onSave }: ModalCrearIngresoProps) {
   const { isDarkMode } = useTheme();
-  const [monto, setMonto] = useState('0');
+  const [monto, setMonto] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -36,12 +37,25 @@ export default function ModalCrearIngreso({ visible, onClose, onSave }: ModalCre
 
   const handleChangeMonto = (val: string) => {
     const cleaned = cleanNumericValue(val);
-    setMonto(cleaned || '0');
+    setMonto(cleaned);
   };
 
   const handleGuardar = async () => {
+    if (monto.trim() === '') {
+      Alert.alert("Campo Requerido", "El campo de monto no puede estar vacío.");
+      return;
+    }
+
     const numericMonto = parseFloat(monto);
-    if (!numericMonto || numericMonto <= 0 || descripcion.trim() === '') return;
+    if (!numericMonto || numericMonto <= 0) {
+      Alert.alert("Monto Inválido", "El monto no puede ser cero.");
+      return;
+    }
+
+    if (descripcion.trim() === '') {
+      Alert.alert("Descripción Faltante", "Por favor ingresa una descripción para este ingreso.");
+      return;
+    }
     
     setEnviando(true);
     try {
@@ -54,8 +68,9 @@ export default function ModalCrearIngreso({ visible, onClose, onSave }: ModalCre
           
           setTimeout(() => {
             setShowSuccess(false);
-            setMonto('0');
+            setMonto('');
             setDescripcion('');
+            setEnviando(false);
             onSave();
             onClose();
           }, 1200);
@@ -110,7 +125,7 @@ export default function ModalCrearIngreso({ visible, onClose, onSave }: ModalCre
                                         keyboardType="numeric"
                                         autoFocus
                                         className={`${textMain} text-5xl font-black tracking-tighter text-center`}
-                                        value={formatearCOP(parseFloat(monto) || 0)}
+                                        value={monto === '' ? '' : formatearCOP(parseFloat(monto) || 0)}
                                         onChangeText={handleChangeMonto}
                                     />
                                 </View>
@@ -140,27 +155,18 @@ export default function ModalCrearIngreso({ visible, onClose, onSave }: ModalCre
                 <Button 
                     titulo={enviando ? "Procesando ingreso..." : "Confirmar Ingreso en Cuenta"} 
                     onPress={handleGuardar}
-                    disabled={parseFloat(monto) <= 0 || descripcion.trim() === '' || enviando}
+                    disabled={enviando}
                     className="h-16 rounded-[25px]"
                 />
             </View>
           </KeyboardAvoidingView>
         </View>
 
-      {/* Alerta de Éxito Overlay */}
-      <Modal 
-        isVisible={showSuccess}
-        animationIn="zoomIn"
-        animationOut="fadeOut"
-        backdropOpacity={0.8}
-        className="m-0 items-center justify-center"
-      >
-        <View className="bg-brand w-36 h-36 rounded-[45px] items-center justify-center shadow-2xl">
-            <Check size={70} color="#000" strokeWidth={5} />
-        </View>
-        <Text className="text-white text-3xl font-black mt-8 tracking-tighter">¡Ingreso Exitoso!</Text>
-        <Text className="text-brand text-xs font-bold uppercase tracking-[4px] mt-2 opacity-80">Daniq Premium</Text>
-      </Modal>
+      {/* Alerta de Éxito Overlay Reemplazada */}
+      <ModalExito 
+        visible={showSuccess}
+        titulo="¡Ingreso Exitoso!"
+      />
     </Modal>
   );
 }

@@ -10,8 +10,8 @@ import { useNotificaciones } from '../../notificaciones/hooks/useNotificaciones'
 import ModalConfirmacion from '../../../shared/components/ModalConfirmacion';
 
 import * as Updates from 'expo-updates';
-
 import { useTheme } from '../../../core/contexts/ThemeContext';
+import { APP_INFO } from '../../../core/constants/appInfo';
 
 /**
  * ConfiguracionPage: Centro de control del usuario.
@@ -234,7 +234,7 @@ export default function ConfiguracionPage() {
                     </View>
                     <View>
                         <Text className={`${textMain} font-bold text-[15px]`}>Versión Actual</Text>
-                        <Text className={`${textSub} text-xs mt-0.5`}>Daniq v1.0.0 Premium</Text>
+                        <Text className={`${textSub} text-xs mt-0.5`}>Daniq v{APP_INFO.version}</Text>
                     </View>
                 </View>
                 <TouchableOpacity 
@@ -248,7 +248,7 @@ export default function ConfiguracionPage() {
         </Card>
 
         <View className="items-center opacity-20 mb-10">
-           <Text className="text-slate-500 text-[10px] font-black uppercase tracking-[5px]">Daniq v1.0.0 Premium</Text>
+           <Text className="text-slate-500 text-[10px] font-black uppercase tracking-[5px]">{APP_INFO.nombre} v{APP_INFO.version} Premium</Text>
         </View>
       </ScrollView>
 
