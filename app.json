@@ -2,7 +2,7 @@
   "expo": {
     "name": "daniq",
     "slug": "daniq",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "daniq",
@@ -17,6 +17,7 @@
     },
     "android": {
       "package": "com.juniorarias.daniq",
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#22C55E",
         "foregroundImage": "./assets/images/icon.png"
