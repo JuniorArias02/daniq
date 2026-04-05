@@ -44,3 +44,6 @@ app-example
 
 # Docs
 docs/
+
+# IDE
+.vscode/
