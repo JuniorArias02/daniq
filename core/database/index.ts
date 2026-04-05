@@ -25,7 +25,8 @@ export const getDB = async () => {
     try {
       const db = await SQLite.openDatabaseAsync(DB_NAME);
       
-      // 1. Configuramos la sesión (paso independiente para evitar NPE en Android)
+      // 1. WAL mode: permite lecturas concurrentes sin bloquear escrituras (fix "database is locked")
+      await db.execAsync('PRAGMA journal_mode = WAL;');
       await db.execAsync('PRAGMA foreign_keys = ON;');
       
       // 2. Garantizamos que el esquema base esté creado
