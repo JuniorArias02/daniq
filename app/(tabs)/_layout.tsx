@@ -2,6 +2,7 @@ import { createMaterialTopTabNavigator, MaterialTopTabNavigationOptions } from '
 import { withLayoutContext } from 'expo-router';
 import { Home, PieChart, Layers, User } from 'lucide-react-native';
 import { View, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../core/contexts/ThemeContext';
 
 const { Navigator } = createMaterialTopTabNavigator();
@@ -14,6 +15,7 @@ export const MaterialTabs = withLayoutContext<
 
 export default function TabLayout() {
   const { isDarkMode } = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <MaterialTabs
@@ -35,8 +37,8 @@ export default function TabLayout() {
           backgroundColor: isDarkMode ? '#0D1117' : '#FFFFFF',
           borderTopColor: isDarkMode ? '#30363D' : '#E2E8F0',
           borderTopWidth: 1,
-          height: 70,
-          paddingBottom: 15,
+          height: 70 + insets.bottom,
+          paddingBottom: 15 + insets.bottom,
           elevation: isDarkMode ? 0 : 8,
           shadowOpacity: isDarkMode ? 0 : 0.1,
         },

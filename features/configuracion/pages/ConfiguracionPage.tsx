@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator, Linking, Platform } from 'react-native';
 import { ArrowLeft, Moon, Bell, LifeBuoy, ChevronRight, Settings, Smartphone, RefreshCcw } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import BaseLayout from '../../../core/layouts/BaseLayout';
@@ -84,8 +84,13 @@ export default function ConfiguracionPage() {
 
   const handleUpdateCheck = async () => {
     try {
+        if (Platform.OS === 'web') {
+            alertar("No disponible en Web", "Las actualizaciones en la nube solo aplican para la App móvil instalada.", "info");
+            return;
+        }
+
         if (__DEV__) {
-            alertar("Modo Desarrollo", "En Expo Go las actualizaciones son automáticas cada vez que guardas tu código en la PC.", "info");
+            alertar("Modo Desarrollo", "Estás en Expo Go, solo puedes actualizar guardando el código en tu PC.", "info");
             return;
         }
 
@@ -94,15 +99,15 @@ export default function ConfiguracionPage() {
             await Updates.fetchUpdateAsync();
             alertar(
                 "¡Actualización Lista!", 
-                "Se ha descargado una nueva versión de Daniq. Pulsa Confirmar para reiniciar la app ahora.",
+                "Se ha descargado una nueva versión de Daniq. Pulsa Reiniciar para aplicarla.",
                 "info"
             );
         } else {
             alertar("Daniq al Día", "Ya tienes la última versión oficial instalada. ¡Sigue ahorrando!", "info");
         }
-    } catch (e) {
+    } catch (e: any) {
         console.error(e);
-        alertar("Sincronización", "No pudimos conectar con los servidores de Expo en este momento.", "danger");
+        alertar("Error de Sincronización", "No pudimos conectar con los servidores de Expo en este momento. " + e.message, "danger");
     }
   };
 

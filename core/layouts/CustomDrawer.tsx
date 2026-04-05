@@ -1,6 +1,6 @@
 import { DrawerContentComponentProps, DrawerContentScrollView } from '@react-navigation/drawer';
 import { useRouter } from 'expo-router';
-import { AlertTriangle, BarChart3, FileOutput, Home, Settings, Tag, Trash2, User } from 'lucide-react-native';
+import { AlertTriangle, BarChart3, FileOutput, Home, Settings, Tag, Trash2, User, List } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -68,6 +68,7 @@ export default function CustomDrawer(props: CustomDrawerProps) {
   const menuItems = [
     { label: 'Inicio', icon: Home, route: '/(tabs)' },
     { label: 'Categorías', icon: Tag, route: '/categorias' },
+    { label: 'Movimientos', icon: List, route: '/movimientos' },
     { label: 'Análisis Avanzado', icon: BarChart3, route: '/reportes_avanzados' },
   ];
 

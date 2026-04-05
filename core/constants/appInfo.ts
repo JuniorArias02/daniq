@@ -4,7 +4,7 @@
 export const APP_INFO = {
   nombre: 'Daniq',
   tagline: 'Control inteligente de gastos',
-  version: '1.0.1',
+  version: '1.0.2',
   ambiente: 'Desktop Preview',
   lema: 'Tu aliada financiera'
 };

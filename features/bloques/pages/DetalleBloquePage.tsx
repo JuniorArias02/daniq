@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { Plus, ArrowLeft, TrendingDown, Clock, Tag, ShoppingCart, Utensils, Zap, Bus, Coffee, Heart, Briefcase, Car, Home } from 'lucide-react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Plus, ArrowLeft, TrendingDown, Clock, Tag, ShoppingCart, Utensils, Zap, Bus, Coffee, Heart, Briefcase, Car, Home, AlertTriangle } from 'lucide-react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import BaseLayout from '../../../core/layouts/BaseLayout';
 import Card from '../../../shared/components/Card';
@@ -13,6 +13,7 @@ import ModalCrearItemBloque from '../components/ModalCrearItemBloque';
 import { formatearCOP } from '../../../core/utils/formatearDinero';
 import { useTheme } from '../../../core/contexts/ThemeContext';
 import { Trash2 } from 'lucide-react-native';
+import Modal from 'react-native-modal';
 
 const ICON_MAP: Record<string, any> = { ShoppingCart, Utensils, Zap, Bus, Coffee, Heart, Briefcase, Car, Home };
 
@@ -31,6 +32,10 @@ export default function DetalleBloquePage({ id }: { id: string }) {
   const [cargando, setCargando] = useState(true);
   const [modalGastoVisible, setModalGastoVisible] = useState(false);
   const [modalItemVisible, setModalItemVisible] = useState(false);
+  
+  // Estado para el modal de eliminación premium
+  const [modalEliminarVisible, setModalEliminarVisible] = useState(false);
+  const [itemAEliminar, setItemAEliminar] = useState<{id: number, nombre: string} | null>(null);
 
   const cargarDatos = useCallback(async () => {
     try {
@@ -55,9 +60,18 @@ export default function DetalleBloquePage({ id }: { id: string }) {
     cargarDatos();
   };
 
-  const handleEliminarItem = async (itemId: number) => {
-    await itemBloqueService.eliminarItem(itemId);
-    cargarDatos();
+  const handleEliminarItem = (itemId: number, nombre: string) => {
+    setItemAEliminar({ id: itemId, nombre });
+    setModalEliminarVisible(true);
+  };
+
+  const ejecutarEliminacion = async () => {
+    if (itemAEliminar) {
+      await itemBloqueService.eliminarItem(itemAEliminar.id);
+      setModalEliminarVisible(false);
+      setItemAEliminar(null);
+      cargarDatos();
+    }
   };
 
   useFocusEffect(
@@ -160,7 +174,7 @@ export default function DetalleBloquePage({ id }: { id: string }) {
                         </View>
                         <View className="flex-row items-center">
                             <Text className={`${textSub} font-bold text-[13px] mr-4`}>{formatearCOP(item.precio)}</Text>
-                            <TouchableOpacity onPress={() => handleEliminarItem(item.id)} hitSlop={15}>
+                            <TouchableOpacity onPress={() => handleEliminarItem(item.id, item.nombre)} hitSlop={15}>
                                 <Trash2 size={16} color="#EF4444" opacity={0.6} />
                             </TouchableOpacity>
                         </View>
@@ -224,6 +238,46 @@ export default function DetalleBloquePage({ id }: { id: string }) {
         onClose={() => setModalItemVisible(false)}
         onSave={handleAgregarItem}
       />
+
+      {/* Modal Premium de Eliminación */}
+      <Modal
+        isVisible={modalEliminarVisible}
+        onBackdropPress={() => setModalEliminarVisible(false)}
+        animationIn="zoomIn"
+        animationOut="zoomOut"
+        backdropOpacity={0.6}
+        className="m-0 justify-end"
+      >
+        <View className={`${isDarkMode ? 'bg-dark-bg' : 'bg-white'} p-8 pt-12 rounded-t-[50px] border-t border-red-500/20 shadow-2xl`}>
+          <View className="items-center mb-8">
+            <View className="w-16 h-16 bg-red-500/10 rounded-full items-center justify-center mb-6 border border-red-500/20">
+              <AlertTriangle size={32} color="#EF4444" />
+            </View>
+            <Text className={`${textMain} text-2xl font-black text-center tracking-tight mb-3`}>¿Eliminar Meta?</Text>
+            <Text className={`${textSub} text-center text-base leading-6 px-4`}>
+              Estás a punto de borrar la meta <Text className="font-bold">{itemAEliminar?.nombre}</Text>. Esta acción no se puede deshacer.
+            </Text>
+          </View>
+
+          <View className="space-y-4">
+            <TouchableOpacity
+              className="bg-red-500 p-5 rounded-3xl flex-row items-center justify-center mb-4"
+              onPress={ejecutarEliminacion}
+            >
+              <Trash2 size={20} color="white" className="mr-2" />
+              <Text className="text-white font-black text-base ml-2">SÍ, ELIMINAR</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className={`${isDarkMode ? 'bg-dark-card border-dark-border/40' : 'bg-slate-100 border-slate-200'} p-5 rounded-3xl items-center border`}
+              onPress={() => setModalEliminarVisible(false)}
+            >
+              <Text className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'} font-bold text-base`}>Conservar Meta</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </BaseLayout>
   );
 }

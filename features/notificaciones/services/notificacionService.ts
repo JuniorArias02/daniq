@@ -4,6 +4,8 @@ import { MENSAJES_DANIQ } from '../constants/mensajes';
 import { obtenerUsuarioPrincipal } from '../../usuario/services/usuarioService';
 import { notificacionLogService } from './notificacionLogService';
 
+const CHANNEL_ID = 'daniq-default';
+
 /**
  * notificacionService: Motor de control de alertas Push locales.
  */
@@ -26,7 +28,7 @@ export const notificacionService = {
     }
 
     if (Platform.OS === 'android') {
-      Notifications.setNotificationChannelAsync('daniq-default', {
+      await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
         name: 'Alertas Daniq',
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
@@ -57,18 +59,22 @@ export const notificacionService = {
         const titulo = mc.titulo.replace('{{nombre}}', nombre);
         const body = mc.body.replace('{{nombre}}', nombre);
 
+        const channelTriggerProp = Platform.OS === 'android' ? { channelId: CHANNEL_ID } : {};
+
         await Notifications.scheduleNotificationAsync({
             content: {
                 title: titulo,
                 body: body,
                 sound: true,
+                vibrate: [0, 250, 250, 250],
                 priority: Notifications.AndroidNotificationPriority.MAX,
                 data: { screen: 'Inicio' },
             },
             trigger: {
                 type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-                seconds: (i + 1) * intervalSeconds, // La primera en 4h, la segunda en 8h...
-                repeats: false, // Las programamos una a una para que el mensaje cambie
+                seconds: (i + 1) * intervalSeconds, // La primera en X horas
+                repeats: false, 
+                ...channelTriggerProp
             },
         });
 
@@ -91,14 +97,23 @@ export const notificacionService = {
     const titulo = mc.titulo.replace('{{nombre}}', nombre);
     const body = mc.body.replace('{{nombre}}', nombre);
 
+    const channelTriggerProp = Platform.OS === 'android' ? { channelId: CHANNEL_ID } : {};
+
     await Notifications.scheduleNotificationAsync({
       content: {
         title: titulo,
         body: body,
         sound: true,
+        vibrate: [0, 250, 250, 250],
         priority: Notifications.AndroidNotificationPriority.MAX,
       },
-      trigger: null, // null significa disparo inmediato
+      // Usamos TIME_INTERVAL muy corto (1 seg) en lugar de null para poder asignarle el channelId en Android
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 1,
+        repeats: false,
+        ...channelTriggerProp
+      },
     });
 
     // Guardamos en el log
@@ -106,11 +121,12 @@ export const notificacionService = {
   }
 };
 
-// Configuración moderna para SDK 54+
+// Configuración recomendada para asegurar la visibilidad en Android e iOS, especialmente en Expo Go
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowBanner: true, // Nuevo para Android/iOS
-    shouldShowList: true, // Nuevo para Android/iOS
+    shouldShowAlert: true, // Legacy (requerido a veces en Android viejo o Expo Go)
+    shouldShowBanner: true, 
+    shouldShowList: true,   
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
