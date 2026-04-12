@@ -1,8 +1,10 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet, TouchableWithoutFeedback, useWindowDimensions } from 'react-native';
 import { Check } from 'lucide-react-native';
 import Modal from 'react-native-modal';
 import { useTheme } from '../../core/contexts/ThemeContext';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 
 interface ModalExitoProps {
   visible: boolean;
@@ -12,18 +14,29 @@ interface ModalExitoProps {
 
 /**
  * ModalExito: Un modal minimalista y elegante para confirmar acciones exitosas.
- * No cubre toda la pantalla de forma agresiva.
+ * Ahora con el sistema estándar de difuminado (Blur).
  */
 export default function ModalExito({ visible, titulo, subtitulo = "Daniq Premium" }: ModalExitoProps) {
   const { isDarkMode } = useTheme();
+  const { width, height } = useWindowDimensions();
 
   return (
     <Modal 
       isVisible={visible}
       animationIn="zoomIn"
       animationOut="zoomOut"
-      backdropOpacity={0.3}
+      backdropOpacity={0}
       backdropTransitionOutTiming={0}
+      onModalShow={() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)}
+      customBackdrop={
+        <View style={{ width, height, backgroundColor: isDarkMode ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.4)' }}>
+          <BlurView
+            intensity={95}
+            tint={isDarkMode ? 'dark' : 'light'}
+            style={StyleSheet.absoluteFill}
+          />
+        </View>
+      }
       className="m-0 items-center justify-center"
     >
       <View className={`${isDarkMode ? 'bg-dark-card border-white/5' : 'bg-white border-slate-100'} p-10 rounded-[50px] border shadow-2xl items-center w-64`}>

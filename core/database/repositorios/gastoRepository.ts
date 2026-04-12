@@ -63,5 +63,25 @@ export const gastoRepository = {
     const sql = 'SELECT SUM(monto) as total FROM gastos WHERE usuario_id = ?';
     const row = await fetchFirst<{ total: number }>(sql, [usuario_id]);
     return row?.total || 0;
+  },
+
+  /**
+   * Elimina un gasto por su ID.
+   */
+  eliminar: async (gasto_id: number) => {
+    const sql = 'DELETE FROM gastos WHERE id = ?';
+    return await execute(sql, [gasto_id]);
+  },
+
+  /**
+   * Actualiza un gasto existente.
+   */
+  actualizar: async (gasto_id: number, monto: number, descripcion: string, categoria_id?: number) => {
+    const sql = `
+      UPDATE gastos 
+      SET monto = ?, descripcion = ?, categoria_id = ?
+      WHERE id = ?
+    `;
+    return await execute(sql, [monto, descripcion, categoria_id, gasto_id]);
   }
 };

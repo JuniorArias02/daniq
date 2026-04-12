@@ -41,3 +41,13 @@ export async function obtenerPorBloque(bloque_id: number) {
   return await gastoRepository.obtenerPorBloque(bloque_id);
 }
 
+export async function eliminarGasto(gasto_id: number) {
+  return await gastoRepository.eliminar(gasto_id);
+}
+
+export async function editarGasto(gasto_id: number, monto: number, descripcion: string, categoria_id?: number) {
+    if (monto <= 0) throw new Error("El monto debe ser mayor a cero");
+    if (!descripcion || descripcion.trim().length === 0) throw new Error("Añade una descripción");
+
+    return await gastoRepository.actualizar(gasto_id, monto, descripcion, categoria_id);
+}

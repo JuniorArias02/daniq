@@ -1,9 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions, TouchableWithoutFeedback } from 'react-native';
 import Modal from 'react-native-modal';
 import { AlertTriangle, Trash2, X } from 'lucide-react-native';
 import { useTheme } from '../../core/contexts/ThemeContext';
 import Button from './Button';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 
 interface ModalConfirmacionProps {
   visible: boolean;
@@ -17,6 +19,7 @@ interface ModalConfirmacionProps {
 
 /**
  * ModalConfirmacion: Sustituto premium para Alert.alert
+ * Ahora con el sistema estándar de difuminado (Blur).
  */
 export default function ModalConfirmacion({ 
   visible, 
@@ -28,6 +31,7 @@ export default function ModalConfirmacion({
   tipo = 'danger'
 }: ModalConfirmacionProps) {
   const { isDarkMode } = useTheme();
+  const { width, height } = useWindowDimensions();
 
   const textMain = isDarkMode ? 'text-white' : 'text-slate-900';
   const textSub = isDarkMode ? 'text-slate-400' : 'text-slate-600';
@@ -43,8 +47,20 @@ export default function ModalConfirmacion({
       onBackdropPress={onClose}
       animationIn="zoomIn"
       animationOut="zoomOut"
-      backdropOpacity={0.5}
+      backdropOpacity={0}
       useNativeDriver={true}
+      onModalShow={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
+      customBackdrop={
+        <TouchableWithoutFeedback onPress={onClose}>
+          <View style={{ width, height, backgroundColor: isDarkMode ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.4)' }}>
+            <BlurView
+              intensity={95}
+              tint={isDarkMode ? 'dark' : 'light'}
+              style={StyleSheet.absoluteFill}
+            />
+          </View>
+        </TouchableWithoutFeedback>
+      }
       className="items-center justify-center m-5"
     >
       <View className={`${cardBg} w-full p-8 rounded-[40px] border ${borderCol} items-center shadow-2xl`}>

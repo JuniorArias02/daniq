@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, StyleSheet, TouchableWithoutFeedback } from 'react-native';
 import { Layers, Plus, TrendingDown, Clock, MoreVertical, Trash2, Menu } from 'lucide-react-native';
 import { useFocusEffect, useRouter, useNavigation } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
@@ -15,6 +15,7 @@ import ModalConfirmacion from '../../../shared/components/ModalConfirmacion';
 import ModalOpcionesBloque from '../components/ModalOpcionesBloque';
 import { Image } from 'expo-image';
 import { useTheme } from '../../../core/contexts/ThemeContext';
+import { BlurView } from 'expo-blur';
 
 /**
  * BloquesPage: Vista principal de los "Bolsillos" o Bolsas de Gasto.
@@ -36,6 +37,7 @@ export default function BloquesPage() {
   const [gastoModalVisible, setGastoModalVisible] = useState(false);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [opcionesModalVisible, setOpcionesModalVisible] = useState(false);
+  const [blurOpciones, setBlurOpciones] = useState(false);
   const [bloqueSeleccionado, setBloqueSeleccionado] = useState<any | null>(null);
   const [bloqueAEliminar, setBloqueAEliminar] = useState<{id: number, nombre: string} | null>(null);
 
@@ -221,6 +223,18 @@ export default function BloquesPage() {
         bloqueAEditar={bloqueSeleccionado}
       />
 
+      {/* Blur sincronizado con la animación del modal de opciones */}
+      {blurOpciones && (
+        <TouchableWithoutFeedback onPress={() => setOpcionesModalVisible(false)}>
+          <BlurView
+            intensity={60}
+            tint={isDarkMode ? 'dark' : 'light'}
+            experimentalBlurMethod="dimezisBlurView"
+            style={[StyleSheet.absoluteFill, { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.55)' : 'rgba(15,23,42,0.4)' }]}
+          />
+        </TouchableWithoutFeedback>
+      )}
+
       {/* Modal de Opciones (Editar/Eliminar) */}
       <ModalOpcionesBloque
         visible={opcionesModalVisible}
@@ -228,6 +242,8 @@ export default function BloquesPage() {
         onEdit={handleEditar}
         onDelete={() => handleEliminar(bloqueSeleccionado?.id, bloqueSeleccionado?.nombre)}
         nombreBloque={bloqueSeleccionado?.nombre || ''}
+        onModalWillShow={() => setBlurOpciones(true)}
+        onModalHide={() => setBlurOpciones(false)}
       />
 
       {/* Formulario Modal de Gastos (Actualiza la vista) */}
