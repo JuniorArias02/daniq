@@ -16,3 +16,17 @@ export async function registrarIngreso(usuario_id: number, monto: number, descri
 export async function obtenerTotalIngresos(usuario_id: number) {
   return await ingresoRepository.obtenerTotalAcumulado(usuario_id);
 }
+
+export async function obtenerIngresosPorUsuario(usuario_id: number) {
+  return await ingresoRepository.listarPorUsuario(usuario_id);
+}
+
+export async function actualizarIngreso(id: number, monto: number, descripcion: string) {
+  if (monto <= 0) throw new Error("El ingreso debe ser una cifra positiva");
+  if (!descripcion || descripcion.trim().length === 0) throw new Error("Dale un nombre al ingreso");
+  return await ingresoRepository.actualizar(id, monto, descripcion);
+}
+
+export async function eliminarIngreso(id: number) {
+  return await ingresoRepository.eliminar(id);
+}

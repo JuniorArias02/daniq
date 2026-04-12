@@ -1,8 +1,8 @@
 import { DrawerContentComponentProps, DrawerContentScrollView } from '@react-navigation/drawer';
 import { useRouter } from 'expo-router';
-import { AlertTriangle, BarChart3, FileOutput, Home, Settings, Tag, Trash2, User, List } from 'lucide-react-native';
+import { AlertTriangle, BarChart3, ExternalLink, FileOutput, Globe, Home, Settings, Tag, Trash2, User, List } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Text, TouchableOpacity, View, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Modal from 'react-native-modal';
 import { APP_INFO } from '../../core/constants/appInfo';
@@ -150,12 +150,34 @@ export default function CustomDrawer(props: CustomDrawerProps) {
         </View>
       </DrawerContentScrollView>
 
-      {/* Pie de Página: App Info & Reset */}
+      {/* Pie de Página: App Info, Web & Reset */}
       <View className={`p-8 border-t ${isDarkMode ? 'border-dark-border/10' : 'border-slate-100'}`}>
         <View className="items-center mb-6">
           <Text className="text-slate-400 text-[11px] font-bold uppercase tracking-[2px]">{APP_INFO.nombre}</Text>
           <Text className="text-slate-600 text-[9px] mt-1 italic">{APP_INFO.tagline} • v{APP_INFO.version}</Text>
         </View>
+
+        {/* Botón Web Oficial */}
+        <TouchableOpacity
+          onPress={() => Linking.openURL('https://daniq.vercel.app')}
+          activeOpacity={0.8}
+          className={`flex-row items-center justify-between p-4 mb-3 rounded-2xl border ${
+            isDarkMode
+              ? 'bg-brand/10 border-brand/20'
+              : 'bg-brand/5 border-brand/20'
+          }`}
+        >
+          <View className="flex-row items-center">
+            <View className="w-8 h-8 rounded-xl bg-brand items-center justify-center mr-3">
+              <Globe size={16} color="#fff" strokeWidth={2} />
+            </View>
+            <View>
+              <Text className="text-brand font-black text-[13px] tracking-tight">daniq.vercel.app</Text>
+              <Text className={`${textSub} text-[9px] font-bold uppercase tracking-widest`}>Sitio Web Oficial</Text>
+            </View>
+          </View>
+          <ExternalLink size={14} color="#22C55E" strokeWidth={2} />
+        </TouchableOpacity>
 
         <TouchableOpacity
           className={`flex-row items-center justify-center p-4 ${isDarkMode ? 'bg-dark-card border-dark-border/30' : 'bg-slate-50 border-slate-200'} rounded-2xl active:bg-brand/5`}

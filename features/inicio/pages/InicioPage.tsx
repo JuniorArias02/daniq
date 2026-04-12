@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { MessageCircle, Plus, Briefcase, ShoppingCart, Wine, ArrowUp, ArrowDown, Menu } from 'lucide-react-native';
+import { MessageCircle, Plus, Briefcase, ShoppingCart, Wine, ArrowUp, ArrowDown, Menu, TrendingUp } from 'lucide-react-native';
 import { useNavigation } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
 
@@ -22,7 +22,7 @@ const MOCK_MOVIMIENTOS = [
 import ModalCrearGasto from '../../gastos/components/ModalCrearGasto';
 import ModalCrearIngreso from '../../ingresos/components/ModalCrearIngreso';
 import { obtenerUltimosMovimientos, obtenerTotalGastos } from '../../gastos/services/gastoService';
-import { obtenerTotalIngresos } from '../../ingresos/services/ingresoService';
+import { obtenerTotalIngresos, obtenerIngresosPorUsuario } from '../../ingresos/services/ingresoService';
 import { obtenerAnaliticaMensual } from '../../reportes/services/reporteService';
 
 import { useFocusEffect } from '@react-navigation/native';
@@ -41,6 +41,8 @@ export default function InicioPage() {
   
   const [gastoModalVisible, setGastoModalVisible] = React.useState(false);
   const [ingresoModalVisible, setIngresoModalVisible] = React.useState(false);
+  const [ingresoAEditar, setIngresoAEditar] = React.useState<any | null>(null);
+  const [ingresos, setIngresos] = React.useState<any[]>([]);
   const [cargando, setCargando] = React.useState(true);
 
   // Colores Dinámicos Estabilizados
@@ -60,17 +62,19 @@ export default function InicioPage() {
     if (user) {
       setNombreUsuario(user.nombre);
       
-      const [movs, tIngresos, tGastos, stats] = await Promise.all([
+      const [movs, tIngresos, tGastos, stats, listIngresos] = await Promise.all([
         obtenerUltimosMovimientos(user.id),
         obtenerTotalIngresos(user.id),
         obtenerTotalGastos(user.id),
-        obtenerAnaliticaMensual(user.id)
+        obtenerAnaliticaMensual(user.id),
+        obtenerIngresosPorUsuario(user.id)
       ]);
       
       setMovimientos(movs || []);
       setTotalIngresos(tIngresos || 0);
       setTotalGastos(tGastos || 0);
       setStatsMensuales(stats || []);
+      setIngresos(listIngresos || []);
     }
     setCargando(false);
   }, []);
@@ -171,6 +175,43 @@ export default function InicioPage() {
           })}
         </View>
 
+        {/* Sección de Ingresos Editables */}
+        <View className="mt-2 mb-8">
+          <View className="flex-row items-center justify-between mb-4">
+            <Text className={`${textMain} text-[17px] font-bold`}>Mis Ingresos</Text>
+            <TouchableOpacity onPress={() => { setIngresoAEditar(null); setIngresoModalVisible(true); }}>
+              <Text className="text-brand text-sm font-semibold">+ Nuevo</Text>
+            </TouchableOpacity>
+          </View>
+
+          {ingresos.length === 0 ? (
+            <View className={`py-8 items-center justify-center ${statsCardBg} rounded-3xl border border-dashed ${borderCol}`}>
+              <Text className={`${textSub} text-xs text-center px-10 italic`}>Aún no has registrado ingresos.</Text>
+            </View>
+          ) : ingresos.map((ingreso) => (
+            <TouchableOpacity
+              key={ingreso.id}
+              onPress={() => { setIngresoAEditar(ingreso); setIngresoModalVisible(true); }}
+              activeOpacity={0.75}
+              className={`flex-row items-center justify-between ${cardBg} p-[18px] rounded-2xl mb-3 border ${borderCol}`}
+            >
+              <View className="flex-row items-center flex-1">
+                <View className="w-12 h-12 rounded-2xl items-center justify-center mr-4 bg-brand/10">
+                  <TrendingUp size={20} color="#22C55E" />
+                </View>
+                <View className="flex-1">
+                  <Text className={`${textMain} font-bold text-[15px]`} numberOfLines={1}>{ingreso.descripcion}</Text>
+                  <Text className={`${textSub} text-[10px] mt-0.5 font-medium`}>{ingreso.fecha}</Text>
+                </View>
+              </View>
+              <View className="items-end">
+                <Text className="font-bold text-[14px] text-brand">+ {formatearCOP(ingreso.monto)}</Text>
+                <Text className={`${textSub} text-[9px] mt-0.5 uppercase tracking-widest`}>Toca para editar</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         {/* Estadísticas */}
         <View className="mb-4">
           <Text className={`${textMain} text-[17px] font-bold mb-4`}>Estadísticas</Text>
@@ -238,8 +279,9 @@ export default function InicioPage() {
 
       <ModalCrearIngreso 
         visible={ingresoModalVisible} 
-        onClose={() => setIngresoModalVisible(false)} 
-        onSave={() => cargarDatosGlobales()} 
+        onClose={() => { setIngresoModalVisible(false); setIngresoAEditar(null); }} 
+        onSave={() => cargarDatosGlobales()}
+        ingresoAEditar={ingresoAEditar}
       />
     </BaseLayout>
   );

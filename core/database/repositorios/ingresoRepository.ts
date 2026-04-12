@@ -21,5 +21,28 @@ export const ingresoRepository = {
     const sql = 'SELECT SUM(monto) as total FROM ingresos WHERE usuario_id = ?';
     const row = await fetchFirst<{ total: number }>(sql, [usuario_id]);
     return row?.total || 0;
-  }
+  },
+
+  /**
+   * Lista todos los ingresos de un usuario, del más reciente al más antiguo.
+   */
+  listarPorUsuario: async (usuario_id: number) => {
+    const sql = 'SELECT * FROM ingresos WHERE usuario_id = ? ORDER BY created_at DESC';
+    return await fetchAll<any>(sql, [usuario_id]);
+  },
+
+  /**
+   * Actualiza el monto y la descripción de un ingreso existente.
+   */
+  actualizar: async (id: number, monto: number, descripcion: string) => {
+    const sql = 'UPDATE ingresos SET monto = ?, descripcion = ? WHERE id = ?';
+    await execute(sql, [monto, descripcion, id]);
+  },
+
+  /**
+   * Elimina un ingreso por su ID.
+   */
+  eliminar: async (id: number) => {
+    await execute('DELETE FROM ingresos WHERE id = ?', [id]);
+  },
 };
