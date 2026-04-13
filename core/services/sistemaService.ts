@@ -12,16 +12,23 @@ export const sistemaService = {
     try {
       const db = await getDB();
       
-      // Borrón y cuenta nueva: Vaciamos las tablas (PLURAL) para no destruir el esquema
+      // Destrucción total estructural: Hacemos DROP de todas las tablas para que las migraciones y esquemas nuevos surtan efecto
       await db.execAsync(`
-        DELETE FROM gastos;
-        DELETE FROM ingresos;
-        DELETE FROM bloques;
-        DELETE FROM items_bloque;
-        DELETE FROM categorias;
-        DELETE FROM configuracion;
-        DELETE FROM usuario;
+        DROP TABLE IF EXISTS notificacion_logs;
+        DROP TABLE IF EXISTS gastos;
+        DROP TABLE IF EXISTS ingresos;
+        DROP TABLE IF EXISTS presupuestos_mensuales;
+        DROP TABLE IF EXISTS items_bloque;
+        DROP TABLE IF EXISTS bloques;
+        DROP TABLE IF EXISTS categorias;
+        DROP TABLE IF EXISTS configuracion;
+        DROP TABLE IF EXISTS usuario;
       `);
+
+      // 2. Se obligará a la base de datos a recrearse en el siguiente fetchFirst/getDB
+      // Pero mejor la recreamos de una vez llamando al schema importado
+      const { setupDatabase } = require('../database/schema');
+      await db.execAsync(setupDatabase);
 
       /* Comentado para evitar el aviso de Expo 'Loading from IP' 
          y permitir que la UI reaccione instantáneamente vía LayoutContent */

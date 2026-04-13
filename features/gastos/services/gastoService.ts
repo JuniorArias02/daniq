@@ -9,12 +9,11 @@ export async function registrarGasto(
     usuario_id: number, 
     monto: number, 
     descripcion: string, 
-    bloque_id: number,
+    bloque_id?: number | null,
     categoria_id?: number
 ) {
   // Validaciones de negocio
   if (monto <= 0) throw new Error("El monto debe ser mayor a cero");
-  if (!bloque_id) throw new Error("Debes elegir un bloque de gasto");
   if (!descripcion || descripcion.trim().length === 0) throw new Error("Añade una descripción");
 
   const fechaActual = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
@@ -24,7 +23,7 @@ export async function registrarGasto(
     monto, 
     descripcion, 
     fechaActual, 
-    bloque_id, 
+    bloque_id as any, 
     categoria_id
   );
 }

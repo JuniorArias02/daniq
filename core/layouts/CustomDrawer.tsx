@@ -35,27 +35,6 @@ export default function CustomDrawer(props: CustomDrawerProps) {
     if (user) setUsuario(user);
   };
 
-  const handleLimpiarDatos = () => {
-    setShowResetModal(true);
-  };
-
-  const ejecutarBorrado = async () => {
-    try {
-      // 1. Limpieza de base de datos
-      await sistemaService.resetearAplicacion();
-
-      // 2. Cerramos el modal
-      setShowResetModal(false);
-
-      // 3. ¡AVISAMOS AL ROOTLAYOUT! Esto causará la redireccion inmediata
-      if (props.onReset) {
-        props.onReset();
-      }
-    } catch (e) {
-      setShowResetModal(false);
-    }
-  };
-
   useEffect(() => {
     cargarUser();
     const nav = props.navigation as any;
@@ -179,51 +158,7 @@ export default function CustomDrawer(props: CustomDrawerProps) {
           <ExternalLink size={14} color="#22C55E" strokeWidth={2} />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          className={`flex-row items-center justify-center p-4 ${isDarkMode ? 'bg-dark-card border-dark-border/30' : 'bg-slate-50 border-slate-200'} rounded-2xl active:bg-brand/5`}
-          onPress={handleLimpiarDatos}
-        >
-          <Trash2 size={16} color={isDarkMode ? "#484F58" : "#94A3B8"} className="mr-2" />
-          <Text className="text-slate-500 text-xs font-bold ml-2">Limpiar datos locales</Text>
-        </TouchableOpacity>
       </View>
-
-      {/* Modal Premium Único */}
-      <Modal
-        isVisible={showResetModal}
-        onBackdropPress={() => setShowResetModal(false)}
-        animationIn="zoomIn"
-        animationOut="zoomOut"
-        backdropOpacity={0.6}
-        className="m-0 justify-end"
-      >
-        <View className={`${isDarkMode ? 'bg-dark-bg' : 'bg-white'} p-8 pt-12 rounded-t-[50px] border-t border-brand/20 shadow-2xl`}>
-          <View className="items-center mb-8">
-            <View className="w-16 h-16 bg-red-500/10 rounded-full items-center justify-center mb-6 border border-red-500/20">
-              <AlertTriangle size={32} color="#EF4444" />
-            </View>
-            <Text className={`${textMain} text-3xl font-black text-center tracking-tighter mb-4`}>¿Preparado para un nuevo comienzo?</Text>
-            <Text className="text-slate-500 text-center text-lg leading-6 px-4">Esta acción eliminará **todos** tus registros. Es un boleto de solo ida.</Text>
-          </View>
-
-          <View className="space-y-4">
-            <TouchableOpacity
-              className="bg-red-500 p-6 rounded-[30px] flex-row items-center justify-center mb-4"
-              onPress={ejecutarBorrado}
-            >
-              <Trash2 size={20} color="white" className="mr-2" />
-              <Text className="text-white font-black text-lg ml-2">SÍ, BORRAR TODO</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className={`${isDarkMode ? 'bg-dark-card border-dark-border/40' : 'bg-slate-100 border-slate-200'} p-6 rounded-[30px] items-center border`}
-              onPress={() => setShowResetModal(false)}
-            >
-              <Text className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'} font-bold text-lg`}>Mmm, me arrepentí</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }

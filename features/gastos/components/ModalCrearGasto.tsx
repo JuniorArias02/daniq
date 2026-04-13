@@ -12,6 +12,8 @@ import ModalExito from '../../../shared/components/ModalExito';
 import { useTheme } from '../../../core/contexts/ThemeContext';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
+import { useCoach } from '../../coach/hooks/useCoach';
+import ModalCoach from '../../coach/components/ModalCoach';
 
 interface ModalCrearGastoProps {
   visible: boolean;
@@ -35,6 +37,8 @@ export default function ModalCrearGasto({ visible, onClose, onSave, initialBloqu
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  
+  const { feedback, isVisible: coachVisible, revisarImpactoDeGasto, cerrarCoach } = useCoach();
 
   const textMain = isDarkMode ? 'text-white' : 'text-slate-900';
   const textSub = isDarkMode ? 'text-slate-400' : 'text-slate-600';
@@ -71,9 +75,7 @@ export default function ModalCrearGasto({ visible, onClose, onSave, initialBloqu
           ]);
           
           setBloques(dataBloques);
-          if (dataBloques.length > 0 && !bloqueSeleccionado && !initialBloqueId && !gastoAEditar) {
-             setBloqueSeleccionado(dataBloques[0].id);
-          }
+          // Ya no seleccionamos el primero automáticamente para fomentar Gasto Libre
           
           setCategorias(dataCategorias);
           if (dataCategorias.length > 0 && !categoriaSeleccionada && !gastoAEditar) {
@@ -87,6 +89,7 @@ export default function ModalCrearGasto({ visible, onClose, onSave, initialBloqu
         if (!gastoAEditar) {
             setMonto('');
             setDescripcion('');
+            setBloqueSeleccionado(null);
         }
     }
   }, [visible, initialBloqueId, gastoAEditar]);
@@ -107,12 +110,9 @@ export default function ModalCrearGasto({ visible, onClose, onSave, initialBloqu
       Alert.alert("Descripción Faltante", "Por favor ingresa una descripción para este gasto.");
       return;
     }
-
-    if (!bloqueSeleccionado) {
-      Alert.alert("Falta Información", "Por favor selecciona un bolsillo.");
-      return;
-    }
     
+    // Validacion de bloqueSeleccionado ELIMINADA para permtir bolsillos opcionales.
+
     setEnviando(true);
     try {
       const user = await obtenerUsuarioPrincipal();
@@ -126,17 +126,29 @@ export default function ModalCrearGasto({ visible, onClose, onSave, initialBloqu
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           setShowSuccess(true);
           
+          let resultadoCoach = null;
+          if (!gastoAEditar) {
+             resultadoCoach = await revisarImpactoDeGasto(numericMonto, bloqueSeleccionado);
+          }
+          
           setTimeout(() => {
             setShowSuccess(false);
             setEnviando(false);
             onSave();
-            onClose();
+            if (!resultadoCoach) {
+              onClose();
+            }
           }, 1200);
       }
     } catch (e) {
       console.error(e);
       setEnviando(false);
     }
+  };
+
+  const handleCerrarCoach = () => {
+    cerrarCoach();
+    onClose();
   };
 
   return (
@@ -223,23 +235,39 @@ export default function ModalCrearGasto({ visible, onClose, onSave, initialBloqu
                           />
                       </View>
 
-                      {/* Selector de BOLSILLO - Deshabilitado si estamos editando para evitar inconsistencias de presupuesto entre bloques */}
-                      <View className="mb-8 opacity-60">
+                      {/* Selector de BOLSILLO */}
+                      <View className={`mb-8 ${gastoAEditar ? 'opacity-60' : ''}`}>
                           <View className="flex-row items-center mb-5 ml-1">
                               <Layers size={16} color="#22C55E" />
-                              <Text className="text-brand font-bold uppercase tracking-widest text-[10px] ml-2">Bolsillo Asociado</Text>
+                              <Text className="text-brand font-bold uppercase tracking-widest text-[10px] ml-2">¿Asociar a un Bolsillo?</Text>
                           </View>
+                          
                           <View className="flex-row flex-wrap">
-                                {bloques.filter(b => b.id === bloqueSeleccionado).map((bloque) => (
-                                  <View 
+                              {/* Opción de Gasto General (Sin Bloque) */}
+                              {!gastoAEditar && (
+                                <TouchableOpacity 
+                                    onPress={() => setBloqueSeleccionado(null)}
+                                    className={`px-6 py-4 rounded-2xl mr-3 mb-3 border ${bloqueSeleccionado === null ? 'bg-brand border-brand' : `${cardBg} ${borderCol}`}`}
+                                >
+                                    <Text className={`font-black text-[13px] ${bloqueSeleccionado === null ? 'text-black' : isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                        Libre (General)
+                                    </Text>
+                                </TouchableOpacity>
+                              )}
+
+                              {/* Lista de bloques, si está editando solo mostramos el actual, si crea mostramos todos */}
+                              {(gastoAEditar ? bloques.filter(b => b.id === bloqueSeleccionado) : bloques).map((bloque) => (
+                                  <TouchableOpacity 
                                       key={bloque.id} 
-                                      className="px-6 py-4 rounded-2xl mr-3 mb-3 border bg-brand border-brand"
+                                      disabled={!!gastoAEditar}
+                                      onPress={() => setBloqueSeleccionado(bloque.id)}
+                                      className={`px-6 py-4 rounded-2xl mr-3 mb-3 border ${bloqueSeleccionado === bloque.id ? 'bg-brand border-brand' : `${cardBg} ${borderCol}`}`}
                                   >
-                                      <Text className="font-black text-[13px] text-black">
+                                      <Text className={`font-black text-[13px] ${bloqueSeleccionado === bloque.id ? 'text-black' : isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                           {bloque.nombre}
                                       </Text>
-                                  </View>
-                                ))}
+                                  </TouchableOpacity>
+                              ))}
                           </View>
                       </View>
 
@@ -287,6 +315,12 @@ export default function ModalCrearGasto({ visible, onClose, onSave, initialBloqu
       <ModalExito 
         visible={showSuccess}
         titulo={gastoAEditar ? "¡Gasto Actualizado!" : "¡Gasto Registrado!"}
+      />
+
+      <ModalCoach 
+        visible={coachVisible} 
+        feedback={feedback} 
+        onClose={handleCerrarCoach} 
       />
     </Modal>
   );

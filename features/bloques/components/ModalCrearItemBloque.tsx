@@ -6,17 +6,19 @@ import Modal from 'react-native-modal';
 import ModalExito from '../../../shared/components/ModalExito';
 import { useTheme } from '../../../core/contexts/ThemeContext';
 import { formatearCOP } from '../../../core/utils/formatearDinero';
+import { itemBloqueService } from '../services/itemBloqueService';
 
 interface ModalCrearItemBloqueProps {
   visible: boolean;
   onClose: () => void;
-  onSave: (nombre: string, precio: number) => Promise<void>;
+  onSave: () => void;
+  bloqueId: number;
 }
 
 /**
  * ModalCrearItemBloque: Permite planificar un gasto ("Meta de item") dentro de un bolsillo.
  */
-export default function ModalCrearItemBloque({ visible, onClose, onSave }: ModalCrearItemBloqueProps) {
+export default function ModalCrearItemBloque({ visible, onClose, onSave, bloqueId }: ModalCrearItemBloqueProps) {
   const { isDarkMode } = useTheme();
   const [nombre, setNombre] = useState('');
   const [monto, setMonto] = useState('');
@@ -53,7 +55,7 @@ export default function ModalCrearItemBloque({ visible, onClose, onSave }: Modal
     setEnviando(true);
     
     try {
-      await onSave(nombre, numericMonto);
+      await itemBloqueService.agregarItem(bloqueId, nombre, numericMonto);
       setShowSuccess(true);
       
       setTimeout(() => {
@@ -61,6 +63,7 @@ export default function ModalCrearItemBloque({ visible, onClose, onSave }: Modal
         setNombre('');
         setMonto('');
         setEnviando(false);
+        onSave();
         onClose();
       }, 1200);
     } catch (e) {

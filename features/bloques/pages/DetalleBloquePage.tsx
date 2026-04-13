@@ -7,6 +7,7 @@ import BaseLayout from '../../../core/layouts/BaseLayout';
 import Card from '../../../shared/components/Card';
 import Button from '../../../shared/components/Button';
 import ModalCrearGasto from '../../gastos/components/ModalCrearGasto';
+import ModalCrearItemBloque from '../components/ModalCrearItemBloque';
 import { formatearCOP } from '../../../core/utils/formatearDinero';
 import Modal from 'react-native-modal';
 import { BlurView } from 'expo-blur';
@@ -224,6 +225,14 @@ export default function DetalleBloquePage({ id }: { id: string }) {
       </Modal>
 
       <ModalCrearGasto visible={modalEditarGastoVisible} onClose={() => setModalEditarGastoVisible(false)} onSave={() => { cargarDatos(); setGastoSeleccionado(null); }} gastoAEditar={gastoSeleccionado} />
+
+      {/* Modal para crear Metas/Items del bolsillo */}
+      <ModalCrearItemBloque 
+        visible={modalItemVisible} 
+        onClose={() => setModalItemVisible(false)} 
+        onSave={() => cargarDatos()} 
+        bloqueId={parseInt(id)} 
+      />
     </BaseLayout>
   );
 }

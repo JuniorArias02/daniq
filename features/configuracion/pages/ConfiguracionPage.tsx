@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator, Linking, Platform } from 'react-native';
-import { ArrowLeft, Moon, Bell, LifeBuoy, ChevronRight, Settings, Smartphone, RefreshCcw } from 'lucide-react-native';
+import { View, Text, ScrollView, TouchableOpacity, Switch, ActivityIndicator, Linking, Platform } from 'react-native';
+import { ArrowLeft, Moon, Bell, LifeBuoy, ChevronRight, Settings, Smartphone, RefreshCcw, Trash2, AlertTriangle, Lock } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import BaseLayout from '../../../core/layouts/BaseLayout';
 import Card from '../../../shared/components/Card';
@@ -12,6 +12,8 @@ import ModalConfirmacion from '../../../shared/components/ModalConfirmacion';
 import * as Updates from 'expo-updates';
 import { useTheme } from '../../../core/contexts/ThemeContext';
 import { APP_INFO } from '../../../core/constants/appInfo';
+import { sistemaService } from '../../../core/services/sistemaService';
+import Modal from 'react-native-modal';
 
 /**
  * ConfiguracionPage: Centro de control del usuario.
@@ -23,6 +25,7 @@ export default function ConfiguracionPage() {
   const { testAlert } = useNotificaciones(); // Hook de Notificaciones
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [modalSoporteVisible, setModalSoporteVisible] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
   
   // Estado para alertas genéricas premium
   const [modalInfo, setModalInfo] = useState({
@@ -80,6 +83,21 @@ export default function ConfiguracionPage() {
 
   const contactarSoporte = () => {
     Linking.openURL('mailto:junior.arias04yt@gmail.com');
+  };
+
+  const handleLimpiarDatos = () => {
+    setShowResetModal(true);
+  };
+
+  const ejecutarBorrado = async () => {
+    try {
+      await sistemaService.resetearAplicacion();
+      setShowResetModal(false);
+      Updates.reloadAsync();
+    } catch (e) {
+      console.error(e);
+      setShowResetModal(false);
+    }
   };
 
   const handleUpdateCheck = async () => {
@@ -211,6 +229,24 @@ export default function ConfiguracionPage() {
             )}
         </Card>
 
+        {/* Sección: Seguridad (Nueva) */}
+        <Text className="text-slate-500 text-[10px] uppercase font-bold tracking-[3px] mb-4 ml-2">Seguridad y Privacidad</Text>
+        <TouchableOpacity 
+            onPress={() => router.push('/seguridad' as any)}
+            className={`${cardBg} ${borderCol} p-6 rounded-[32px] border ${isDarkMode ? '' : 'shadow-sm'} flex-row items-center justify-between mb-8`}
+        >
+            <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-xl bg-indigo-500/10 items-center justify-center mr-4">
+                    <Lock size={20} color="#6366F1" />
+                </View>
+                <View>
+                    <Text className={`${textMain} font-bold text-[15px]`}>Bloqueo de Aplicación</Text>
+                    <Text className={`${textSub} text-xs mt-0.5`}>PIN, Contraseña o Sin Bloqueo</Text>
+                </View>
+            </View>
+            <ChevronRight size={18} color={isDarkMode ? "#484F58" : "#94A3B8"} />
+        </TouchableOpacity>
+
         {/* Sección: Soporte */}
         <Text className="text-slate-500 text-[10px] uppercase font-bold tracking-[3px] mb-4 ml-2">Ayuda</Text>
         <TouchableOpacity 
@@ -252,6 +288,24 @@ export default function ConfiguracionPage() {
             </View>
         </Card>
 
+        {/* Sección: Peligro */}
+        <Text className="text-red-500/70 text-[10px] uppercase font-bold tracking-[3px] mb-4 ml-2 mt-4">Zona Peligrosa</Text>
+        <TouchableOpacity 
+            onPress={handleLimpiarDatos}
+            className={`bg-red-500/10 p-6 rounded-[32px] border border-red-500/20 flex-row items-center justify-between mb-8`}
+        >
+            <View className="flex-row items-center flex-1">
+                <View className="w-10 h-10 rounded-xl bg-red-500 items-center justify-center mr-4">
+                    <Trash2 size={20} color="white" />
+                </View>
+                <View className="flex-1 pr-4">
+                    <Text className={`text-red-500 font-bold text-[15px]`}>Resetear Fábrica</Text>
+                    <Text className={`${textSub} text-[10px] mt-0.5`}>Elimina todos los datos permanentemente</Text>
+                </View>
+            </View>
+            <ChevronRight size={18} color="#EF4444" />
+        </TouchableOpacity>
+
         <View className="items-center opacity-20 mb-10">
            <Text className="text-slate-500 text-[10px] font-black uppercase tracking-[5px]">{APP_INFO.nombre} v{APP_INFO.version} Premium</Text>
         </View>
@@ -283,6 +337,43 @@ export default function ConfiguracionPage() {
         textoConfirmar={modalInfo.titulo === "¡Actualización Lista!" ? "Reiniciar" : "Entendido"}
         tipo={modalInfo.tipo}
       />
+
+      {/* Modal Premium Único - Borrado */}
+      <Modal
+        isVisible={showResetModal}
+        onBackdropPress={() => setShowResetModal(false)}
+        animationIn="zoomIn"
+        animationOut="zoomOut"
+        backdropOpacity={0.6}
+        className="m-0 justify-end"
+      >
+        <View className={`${isDarkMode ? 'bg-dark-bg' : 'bg-white'} p-8 pt-12 rounded-t-[50px] border-t border-brand/20 shadow-2xl`}>
+          <View className="items-center mb-8">
+            <View className="w-16 h-16 bg-red-500/10 rounded-full items-center justify-center mb-6 border border-red-500/20">
+              <AlertTriangle size={32} color="#EF4444" />
+            </View>
+            <Text className={`${textMain} text-3xl font-black text-center tracking-tighter mb-4`}>¿Preparado para un nuevo comienzo?</Text>
+            <Text className="text-slate-500 text-center text-lg leading-6 px-4">Esta acción eliminará **todos** tus registros. Es un boleto de solo ida.</Text>
+          </View>
+
+          <View className="space-y-4">
+            <TouchableOpacity
+              className="bg-red-500 p-6 rounded-[30px] flex-row items-center justify-center mb-4"
+              onPress={ejecutarBorrado}
+            >
+              <Trash2 size={20} color="white" className="mr-2" />
+              <Text className="text-white font-black text-lg ml-2">SÍ, BORRAR TODO</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className={`${isDarkMode ? 'bg-dark-card border-dark-border/40' : 'bg-slate-100 border-slate-200'} p-6 rounded-[30px] items-center border`}
+              onPress={() => setShowResetModal(false)}
+            >
+              <Text className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'} font-bold text-lg`}>Mmm, me arrepentí</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </BaseLayout>
   );
 }

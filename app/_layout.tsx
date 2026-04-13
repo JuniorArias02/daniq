@@ -11,6 +11,7 @@ import "../global.css";
 import CustomDrawer from "../core/layouts/CustomDrawer";
 import { ThemeProvider, useTheme } from "../core/contexts/ThemeContext";
 import { AuthProvider, useAuth } from "../core/contexts/AuthContext";
+import AuthGuard from "../features/autenticacion/components/AuthGuard";
 
 /**
  * RootLayout: Corazón de Daniq.
@@ -66,27 +67,29 @@ function LayoutContent() {
 
   // Flujo principal con Drawer Navegador Estable
   return (
-    <Drawer
-      drawerContent={(props: any) => <CustomDrawer {...props} onReset={reiniciarUsuario} />}
-      screenOptions={{
-        headerShown: false,
-        drawerType: 'front',
-        drawerStyle: {
-          backgroundColor: isDarkMode ? '#0D1117' : '#FFFFFF',
-          width: '80%',
-        },
-        overlayColor: 'rgba(0,0,0,0.7)',
-      }}
-    >
-      <Drawer.Screen 
-        name="(tabs)" 
-        options={{ drawerLabel: "Resumen Principal", title: "Daniq" }} 
-      />
-      {/* Añadimos explícitamente configuracion para evitar el crash de contexto en rutas huérfanas */}
-      <Drawer.Screen 
-        name="configuracion" 
-        options={{ drawerItemStyle: { display: 'none' } }} 
-      />
-    </Drawer>
+    <AuthGuard>
+      <Drawer
+        drawerContent={(props: any) => <CustomDrawer {...props} onReset={reiniciarUsuario} />}
+        screenOptions={{
+          headerShown: false,
+          drawerType: 'front',
+          drawerStyle: {
+            backgroundColor: isDarkMode ? '#0D1117' : '#FFFFFF',
+            width: '80%',
+          },
+          overlayColor: 'rgba(0,0,0,0.7)',
+        }}
+      >
+        <Drawer.Screen 
+          name="(tabs)" 
+          options={{ drawerLabel: "Resumen Principal", title: "Daniq" }} 
+        />
+        {/* Añadimos explícitamente configuracion para evitar el crash de contexto en rutas huérfanas */}
+        <Drawer.Screen 
+          name="configuracion" 
+          options={{ drawerItemStyle: { display: 'none' } }} 
+        />
+      </Drawer>
+    </AuthGuard>
   );
 }
