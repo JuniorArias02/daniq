@@ -26,6 +26,8 @@ import { obtenerTotalIngresos, obtenerIngresosPorUsuario } from '../../ingresos/
 import { obtenerAnaliticaMensual } from '../../reportes/services/reporteService';
 
 import { useFocusEffect } from '@react-navigation/native';
+import { obtenerMensajeWidget, MensajeCoach } from '../../coach/utils/evaluadorReglas';
+import CoachWidget from '../../coach/components/CoachWidget';
 
 export default function InicioPage() {
   const navigation = useNavigation();
@@ -44,6 +46,7 @@ export default function InicioPage() {
   const [ingresoAEditar, setIngresoAEditar] = React.useState<any | null>(null);
   const [ingresos, setIngresos] = React.useState<any[]>([]);
   const [cargando, setCargando] = React.useState(true);
+  const [mensajeCoach, setMensajeCoach] = React.useState<MensajeCoach | null>(null);
 
   // Colores Dinámicos Estabilizados
   const textMain = isDarkMode ? 'text-white' : 'text-slate-900';
@@ -75,6 +78,27 @@ export default function InicioPage() {
       setTotalGastos(tGastos || 0);
       setStatsMensuales(stats || []);
       setIngresos(listIngresos || []);
+
+      // Generar Widget Financiero Diariamente
+      let diasSinGastar = 15; // Por defecto asumimos inactividad
+      if (movs && movs.length > 0) {
+         try {
+           const fechaUltimoGasto = movs[0].fecha;
+           const tzDate = new Date(fechaUltimoGasto);
+           const currentTime = new Date();
+           const diffTime = Math.abs(currentTime.getTime() - tzDate.getTime());
+           diasSinGastar = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+         } catch {
+           diasSinGastar = 3;
+         }
+      }
+
+      setMensajeCoach(obtenerMensajeWidget({
+          totalGastosMesp: tGastos || 0,
+          totalIngresosMesp: tIngresos || 0,
+          conteoGastosPequenos: 0,
+          diasSinGastar
+      }));
     }
     setCargando(false);
   }, []);
@@ -138,8 +162,13 @@ export default function InicioPage() {
           </View>
         </Card>
 
+        {/* Notificación AI Diaria (Coach Widget) */}
+        <View className="mt-8">
+            <CoachWidget mensajeObj={mensajeCoach} />
+        </View>
+
         {/* Sección de Movimientos */}
-        <View className="mt-8 mb-6">
+        <View className="mb-6">
           <View className="flex-row items-center justify-between mb-5">
             <Text className={`${textMain} text-[17px] font-bold`}>Últimos Movimientos</Text>
             <TouchableOpacity onPress={() => cargarDatosGlobales()}>

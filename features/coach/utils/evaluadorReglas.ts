@@ -7,7 +7,7 @@ export interface MetricasCoach {
   bloqueGastado?: number;
 }
 
-export type TipoFeedbackCoach = 'regaño' | 'alerta' | 'felicitacion';
+export type TipoFeedbackCoach = 'regaño' | 'alerta' | 'felicitacion' | 'info';
 
 export interface MensajeCoach {
   mensaje: string;
@@ -147,4 +147,126 @@ export const evaluarRachaAbstinencia = (diasSinGastar: number): MensajeCoach | n
   }
   
   return null;
+};
+
+/**
+ * Evaluador General para el Widget Inteligente en el Dashboard.
+ * Genera mensajes situacionales dependiendo del saldo y la inactividad, con +30 mensajes únicos.
+ */
+export const obtenerMensajeWidget = (metricas: MetricasCoach): MensajeCoach => {
+  const { totalGastosMesp, totalIngresosMesp, diasSinGastar } = metricas;
+  
+  // 1. INACTIVIDAD ABSOLUTA (¿Se le olvidó usar la app?)
+  if (diasSinGastar >= 14) {
+    return {
+       tipo: 'alerta',
+       mensaje: fraseAleatoria([
+         "Me parece raro tanta inactividad, apoco si no lo estas anotando?",
+         "¿Llevas semanas sin gastar ni un peso o se te olvidó que yo existo y anotas en cuaderno?",
+         "Ey, 14 días en ceros... si estás ahorrando de verdad así, pásame la receta para no comer.",
+         "Mucho silencio financiero por aquí. Anota tus gastitos, no te me hagas el loco.",
+         "Esta bien ahorrar pero al menos debes hacer mercado. No me mientas que ya estás flaco.",
+         "O te secuestraron, o se te olvidó registrar tus gastos. Confírmame si sigues vivo anotando algo."
+       ])
+    };
+  }
+
+  // 2. AHORRO GOD-TIER PERO SOSPECHOSO (7 a 13 días sin gastar)
+  if (diasSinGastar >= 7) {
+    return {
+       tipo: 'felicitacion',
+       mensaje: fraseAleatoria([
+         "¡Uf! Ya va una semana sin tocar la cuenta. Eres de hierro. Mantenlo así.",
+         "Qué nivel de disciplina. Siete días invicto, espero no sea porque andas cobrando favores por ahí.",
+         "Excelente racha ahorrativa. Si sigues así te va a alcanzar pa' la cuota inicial de la moto.",
+         "Mucho cuidado con recompensarte y romper la racha comprando bobadas mañana.",
+         "Impresionante. Más de una semana de resistencia pura. Tu billetera te manda un beso.",
+         "Muy bien el ahorro, pero date un gusto pequeño hoy (algo de mil pesitos, ojo)."
+       ])
+    };
+  }
+
+  // 3. DEFICIT (Llorón Financiero en el Widget)
+  if (totalIngresosMesp > 0 && totalGastosMesp >= totalIngresosMesp) {
+    return {
+       tipo: 'regaño',
+       mensaje: fraseAleatoria([
+         "Ahorita mismo tu saldo asusta más que el recibo de la luz. Estás en ROJO profundo.",
+         "Bro, ya quemaste todo tu ingreso. Espero que el resto del mes sobrevivas a base de fotos de la nevera.",
+         "Matemáticamente hablando, estás quebrado este mes. Deja de salir y métete debajo de las cobijas.",
+         "Peligro, peligro. Gastaste más del 100% de lo que tienes. Si alguien te invita, di que andas indispuesto.",
+         "Ni se te ocurra ir al centro comercial hoy. Es más, ni abras Mercadolibre. Quedaste pato.",
+         "Si tus finanzas fueran un carro, irías rodando sin llantas y el motor fundido. Recapacita."
+       ])
+    };
+  }
+
+  // 4. PELIGRO DE SOBREGIRO (Gastó > 85% y sigue vivo)
+  if (totalIngresosMesp > 0 && totalGastosMesp > (totalIngresosMesp * 0.85)) {
+    return {
+       tipo: 'alerta',
+       mensaje: fraseAleatoria([
+         "Pilas, ya vas por más del 85% quemado. Un tinto más y te toca vender el televisor.",
+         "Estás que raspes la olla financiera. Bájale dos rayitas a la gastadera porque no aguantas.",
+         "La billetera ya está en UCI. Evita todo tipo de antójitos innecesarios por favor.",
+         "Solo te queda un poquito de presupuesto. Ni respires muy fuerte para que no te cobren el aire.",
+         "A poco de quedarte limpio. Cuida esa platica como si fuera el último vaso de agua en el desierto.",
+         "Alerta amarillísima, casi roja. Vas muy forzado con esos gastos."
+       ])
+    };
+  }
+
+  // 5. CAUTELOSO (Gastó > 50% y < 85%)
+  if (totalIngresosMesp > 0 && totalGastosMesp > (totalIngresosMesp * 0.50)) {
+     return {
+       tipo: 'info',
+       mensaje: fraseAleatoria([
+         "Ya cruzaste el meridiano. La mitad del sueldo se fue a otra mejor vida. Ojo donde pones la otra mitad.",
+         "Vas a mitad de camino, controla tus emociones financieras y no dejes que el consumismo te atrape.",
+         "Ya quemamos más del 50%. A partir de hoy, piensa dos veces antes de pasar esa tarjeta.",
+         "La meta es no llegar al 80%. Vas bien, pero mantente enfocado. Nada de salidas exóticas.",
+         "Equilibrio, mi rey. Piensa en el 'yo del futuro' a fin de mes.",
+         "Andamos cojeando a medio sueldo, no te confies que el mes sigue siendo muy largo."
+       ])
+     };
+  }
+
+  // 6. TIENE PLATA FRESCA (Gastó muy poco < 10% y tiene ingresos)
+  if (totalIngresosMesp > 0 && totalGastosMesp < (totalIngresosMesp * 0.10)) {
+    return {
+       tipo: 'felicitacion',
+       mensaje: fraseAleatoria([
+         "Tienes platica fresca en la cuenta. Hazme un favor y haz de cuenta que eres pobre para no gastarla de un solo tacazo.",
+         "Veo los ingresos fresquitos. ¡Ahorra por el amor de Dios y no te alborotes!",
+         "Tienes la billetera gordita. Ese es tu superpoder ahorita mismo. Escóndela o te la auto-robas con empanadas.",
+         "Mucho billete pero poca cabeza a veces. Mantengamos esos gastos casi en cero lo que más puedas.",
+         "Recién pagado. Apenas para distribuir eso en cosas útiles y apartar el porcentaje pa' los gansos (el ahorro)."
+       ])
+    };
+  }
+
+  // 7. POR DEFECTO (Inicios, inactividad media 3-6 dias, nada de datos, etc)
+  if (diasSinGastar >= 3) {
+      return {
+          tipo: 'info',
+          mensaje: fraseAleatoria([
+             "Llevas un par de días sin reportar gastos... ¿Estás ahorrando o se te olvidó cómo se maneja esto?",
+             "Ojo que el Coach te observa. Llevas varios días quieto. Sigue así.",
+             "Tres días sin movimientos. Me gusta la tranquilidad pero me asusta que de repente te compres un jet.",
+             "Muy quieta la cuenta... O estás secuestrado o alcanzaste la paz interior consumista."
+          ])
+      };
+  }
+
+  return {
+    tipo: 'info',
+    mensaje: fraseAleatoria([
+      "Analizando tu situación... todo tranquilo por ahora. Ve y trae más plata.",
+      "Aquí ando vigilando tu billetera. No te atrevas a tocar ahorros hoy.",
+      "Soy tu Pepe Grillo Financiero. Escribe tu próximo gasto y te diré si te odio por ello.",
+      "Día normal, sin novedades. Aprovecha para leer algo de educación financiera.",
+      "Hoy es un excelente día para seguir demostrando que tienes control de tus impulsos.",
+      "Recuerda que cada peso cuenta. Sí, hasta la monedita con la que pagaste ese dulce."
+    ])
+  };
 };
